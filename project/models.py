@@ -24,7 +24,7 @@ class Content(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.SET_NULL, verbose_name='Категория', null=True)
     image = models.ImageField(verbose_name='Изображения')
     data_added = models.DateField(auto_now_add=True)
-    owner = models.ForeignKey(User, related_name='contents', on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, related_name='contents', on_delete=models.CASCADE, blank=True, null=True)
     content = models.TextField(verbose_name='Описание')
 
     def __str__(self):

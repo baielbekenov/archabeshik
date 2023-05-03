@@ -7,6 +7,9 @@ from project import views
 
 
 urlpatterns = [
+    path('register/', views.RegistrationAPIView.as_view(template_name='templates/registration.html')),
+    path('login/', views.LoginAPIView.as_view()),
+    path('logout/', views.LogoutAPIView.as_view()),
     path('category_create/', views.CategoryCreateAPIView.as_view()),
     path('category_list/', views.CategoryListAPIView.as_view()),
     path('content_detail/<int:pk>/', views.ContentDetail.as_view()),
@@ -16,7 +19,6 @@ urlpatterns = [
     # path('renthouse_detail/<int:pk>/', views.RentHouseDetail.as_view()),
     path('users/', views.UserList.as_view(), name='user-list'),
     path('users/<int:pk>/', views.UserDetail.as_view(), name='user-detail'),
-    # path('', views.api_root),
     path('comment_list/', views.CommentListAPIView.as_view()),
     path('comment_delete/<int:id>/', views.CommentDestroyAPIView.as_view()),
     path('housemanage_create/', views.HouseManageCreateAPIView.as_view()),

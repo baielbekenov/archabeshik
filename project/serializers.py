@@ -5,10 +5,14 @@ from project.models import User, Category, Content, HouseManage, Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
-        fields = ['id', 'username']
+        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name')
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+        return user
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,7 +28,6 @@ class HouseManageSerializer(serializers.ModelSerializer):
                   'price', 'description' ]
 
 
-    # def create(self):
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -49,12 +52,6 @@ class ContentSerializer(serializers.ModelSerializer):
         model = Content
         fields = ['id', 'title', 'category_id', 'image', 'data_added', 'owner', 'content', 'comments']
 
-
-# class ContentListSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = Content
-#         fields = ['id', 'title', 'image']
 
 
 
