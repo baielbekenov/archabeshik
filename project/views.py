@@ -1,5 +1,6 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import redirect, render
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.reverse import reverse
@@ -10,8 +11,6 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, permissions, renderers, viewsets
 from rest_framework.decorators import api_view, action
 from rest_framework.parsers import JSONParser
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework import mixins
 from rest_framework import generics
 from project.permissions import IsOwnerOrReadOnly
@@ -19,11 +18,11 @@ from project.permissions import IsOwnerOrReadOnly
 from project.models import Category, Content, HouseManage, User
 from project.serializers import CategorySerializer, ContentSerializer, HouseManageSerializer, UserSerializer, \
     CommentSerializer
-from .pagination import CommentPagination, CategoryPagination
+from .pagination import CommentPagination, CategoryPagination, ContentPagination
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout
 
 
 class RegistrationAPIView(APIView):
@@ -59,10 +58,6 @@ class LogoutAPIView(APIView):
         return Response({'message': 'Logged out successfully'})
 
 
-
-
-
-
 class CategoryCreateAPIView(generics.CreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -70,10 +65,11 @@ class CategoryCreateAPIView(generics.CreateAPIView):
 
 
 class CategoryListAPIView(generics.ListAPIView):
-    queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
+    queryset = Category.objects.all().order_by('-id')
     pagination_class = CategoryPagination
+    permission_classes = [AllowAny]
+
 
 
 class ContentDetail(generics.RetrieveAPIView):
@@ -103,7 +99,18 @@ class ContentDetail(generics.RetrieveAPIView):
 class ContentList(generics.ListAPIView):
     queryset = Content.objects.all().order_by('-id')
     serializer_class = ContentSerializer
+    pagination_class = ContentPagination
     permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category_id']
+
+    def get_queryset(self):
+        queryset = Content.objects.all()
+        category_id = self.request.query_params.get('category_id')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        return queryset
+
 
 
 class ContentCreate(generics.CreateAPIView):
@@ -121,13 +128,6 @@ class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-
-# @api_view(['GET'])
-# def api_root(request, format=None):
-#     return Response({
-#         'users': reverse('user-list', request=request, format=format),
-#         'snippets': reverse('snippet-list', request=request, format=format)
-#     })
 
 
 class CommentListAPIView(generics.ListCreateAPIView):

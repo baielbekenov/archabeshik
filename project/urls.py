@@ -7,7 +7,7 @@ from project import views
 
 
 urlpatterns = [
-    path('register/', views.RegistrationAPIView.as_view(template_name='templates/registration.html')),
+    path('register/', views.RegistrationAPIView.as_view()),
     path('login/', views.LoginAPIView.as_view()),
     path('logout/', views.LogoutAPIView.as_view()),
     path('category_create/', views.CategoryCreateAPIView.as_view()),

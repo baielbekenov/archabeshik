@@ -24,10 +24,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class HouseManageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseManage
-        fields = ['id', 'title', 'amount_of_rooms', 'phone_number', 'category_id', 'photoes',
+        fields = ['id', 'title', 'amount_of_rooms', 'phone_number', 'category_id', 'photos',
                   'price', 'description' ]
-
-
 
 
 class CommentSerializer(serializers.ModelSerializer):

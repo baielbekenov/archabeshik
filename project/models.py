@@ -2,8 +2,7 @@ from django.utils import timezone
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from pygments.lexers import get_all_lexers
-from pygments.styles import get_all_styles
+from django.contrib.postgres.fields import ArrayField
 
 
 class User(AbstractUser):
@@ -36,7 +35,7 @@ class HouseManage(models.Model):
     amount_of_rooms = models.IntegerField(verbose_name='Количество комнат')
     phone_number = models.IntegerField(verbose_name='Номер телефона')
     category_id = models.ForeignKey(Category, on_delete=models.SET_NULL, verbose_name='Категория', null=True)
-    photoes = models.ImageField(verbose_name='Картинки')
+    photos = models.ImageField(verbose_name='Картинки')
     price = models.IntegerField(verbose_name='Цена')
     description = models.TextField(verbose_name='Описание')
 
@@ -49,10 +48,16 @@ class Comment(models.Model):
     name = models.CharField(max_length=60, verbose_name='Имя')
     email = models.EmailField(verbose_name='Email', blank=True, null=True)
     comment = models.TextField(verbose_name='Текст')
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-id']
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Коментарии'
 
     def __str__(self):
         return self.name
+
 
 
 
