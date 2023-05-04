@@ -105,18 +105,29 @@ class ContentList(generics.ListAPIView):
     filterset_fields = ['category_id']
 
     def get_queryset(self):
-        queryset = Content.objects.all()
+        queryset = Content.objects.all().order_by('-id')
         category_id = self.request.query_params.get('category_id')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
         return queryset
 
 
-
 class ContentCreate(generics.CreateAPIView):
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
     permission_classes = [AllowAny]
+
+
+class ContentDelete(APIView):
+    permission_classes = [AllowAny]
+    def delete(self, request, pk):
+        try:
+            obj = Content.objects.get(pk=pk)
+        except Content.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        
 
 
 class UserList(generics.ListAPIView):

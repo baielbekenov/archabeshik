@@ -15,6 +15,7 @@ urlpatterns = [
     path('content_detail/<int:pk>/', views.ContentDetail.as_view()),
     path('content_list/', views.ContentList.as_view()),
     path('content_create/', views.ContentCreate.as_view()),
+    path('content_delete/<int:pk>/', views.ContentDelete.as_view()),
     # path('renthouse_list/', views.RentHouseList.as_view()),
     # path('renthouse_detail/<int:pk>/', views.RentHouseDetail.as_view()),
     path('users/', views.UserList.as_view(), name='user-list'),
