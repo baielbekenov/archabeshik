@@ -1,20 +1,8 @@
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import redirect, render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.reverse import reverse
-
 from .models import User, Comment
-from django.http import HttpResponse, JsonResponse, Http404
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status, permissions, renderers, viewsets
-from rest_framework.decorators import api_view, action
-from rest_framework.parsers import JSONParser
-from rest_framework import mixins
 from rest_framework import generics
-from project.permissions import IsOwnerOrReadOnly
-
 from project.models import Category, Content, HouseManage, User
 from project.serializers import CategorySerializer, ContentSerializer, HouseManageSerializer, UserSerializer, \
     CommentSerializer
@@ -24,9 +12,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate, login, logout
 
+from .permissions import IsAdminOrReadOnly
+
 
 class RegistrationAPIView(APIView):
-    permission_classes = [AllowAny, ]
+    permission_classes = [AllowAny,]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -39,15 +29,18 @@ class RegistrationAPIView(APIView):
 
 class LoginAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
-
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(username=username, password=password)
-        if user:
-            login(request, user)
-            return Response(UserSerializer(user).data)
-        return Response({'message': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                return Response({'detail': 'Login successful.'})
+            else:
+                return Response({'detail': 'User account has been disabled.'}, status=400)
+        else:
+            return Response({'detail': 'Invalid login credentials.'}, status=400)
 
 
 class LogoutAPIView(APIView):
@@ -56,6 +49,13 @@ class LogoutAPIView(APIView):
     def post(self, request):
         logout(request)
         return Response({'message': 'Logged out successfully'})
+
+
+class CheckAuthAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        return Response({'detail': 'Authenticated.'})
 
 
 class CategoryCreateAPIView(generics.CreateAPIView):
@@ -69,7 +69,6 @@ class CategoryListAPIView(generics.ListAPIView):
     queryset = Category.objects.all().order_by('-id')
     pagination_class = CategoryPagination
     permission_classes = [AllowAny]
-
 
 
 class ContentDetail(generics.RetrieveAPIView):
@@ -119,7 +118,8 @@ class ContentCreate(generics.CreateAPIView):
 
 
 class ContentDelete(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrReadOnly]
+
     def delete(self, request, pk):
         try:
             obj = Content.objects.get(pk=pk)
@@ -129,10 +129,16 @@ class ContentDelete(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
         
 
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+    def get(self, request, format=None):
+        user = request.user
+        return Response({
+            'username': user.username,
+            'email': user.email,
+            # и другие данные пользователя, которые нужно вернуть
+        })
 
 
 class UserDetail(generics.RetrieveAPIView):
