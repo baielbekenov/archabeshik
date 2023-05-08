@@ -1,5 +1,6 @@
-from django.contrib.auth import get_user
+from django.contrib.auth import get_user, authenticate
 from rest_framework import serializers
+from rest_framework.authtoken.models import Token
 
 from project.models import User, Category, Content, HouseManage, Comment
 
@@ -7,25 +8,30 @@ from project.models import User, Category, Content, HouseManage, Comment
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['id', 'username', 'password', 'first_name', 'last_name']
 
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create(username=validated_data['username'])
+        user.set_password(validated_data['password'])
+        user.save()
         return user
+
+
+class TokenSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=255)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'is_rent']
 
 
 class HouseManageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseManage
-        fields = ['id', 'title', 'amount_of_rooms', 'phone_number', 'category_id', 'photos',
-                  'price', 'description' ]
+        fields = ['id', 'title', 'owner',  'amount_of_rooms', 'phone_number', 'category_id', 'remont', 'photos',
+                 'udobstva', 'price', 'description' ]
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -49,6 +55,17 @@ class ContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
         fields = ['id', 'title', 'category_id', 'image', 'data_added', 'owner', 'content', 'comments']
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.image.url
+        return request.build_absolute_uri(image_url)
+
+
+# class CategorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Category
+#         fields = ['id', 'name']
 
 
 

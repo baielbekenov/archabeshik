@@ -1,4 +1,5 @@
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
 from rest_framework.generics import DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from .models import User, Comment
@@ -7,48 +8,50 @@ from project.models import Category, Content, HouseManage, User
 from project.serializers import CategorySerializer, ContentSerializer, HouseManageSerializer, UserSerializer, \
     CommentSerializer
 from .pagination import CommentPagination, CategoryPagination, ContentPagination
-from rest_framework import permissions, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.contrib.auth import authenticate, login, logout
-
-from .permissions import IsAdminOrReadOnly
+from django.contrib.auth import authenticate
 
 
 class RegistrationAPIView(APIView):
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            if user:
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            return Response({'status': 403, 'errors': serializer.errors, 'messge': 'Something went wrong'})
+        serializer.save()
+
+        user = User.objects.get(username = serializer.data['username'])
+        token_obj, _ = Token.objects.get_or_create(user=user)
+
+        return Response({'status': 200, 'payload': serializer.data, 'token': str(token_obj), 'messge': 'your data is saved'})
 
 
 class LoginAPIView(APIView):
-    permission_classes = (permissions.AllowAny,)
-    def post(self, request):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(username=username, password=password)
-        if user is not None:
-            if user.is_active:
-                login(request, user)
-                return Response({'detail': 'Login successful.'})
-            else:
-                return Response({'detail': 'User account has been disabled.'}, status=400)
-        else:
-            return Response({'detail': 'Invalid login credentials.'}, status=400)
+
+        if user is None:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({'token': token.key}, status=status.HTTP_200_OK)
 
 
 class LogoutAPIView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        logout(request)
-        return Response({'message': 'Logged out successfully'})
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_200_OK)
 
 
 class CheckAuthAPIView(APIView):
@@ -59,9 +62,10 @@ class CheckAuthAPIView(APIView):
 
 
 class CategoryCreateAPIView(generics.CreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
 
 
 class CategoryListAPIView(generics.ListAPIView):
@@ -100,25 +104,39 @@ class ContentList(generics.ListAPIView):
     serializer_class = ContentSerializer
     pagination_class = ContentPagination
     permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['category_id']
-
-    def get_queryset(self):
-        queryset = Content.objects.all().order_by('-id')
-        category_id = self.request.query_params.get('category_id')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-        return queryset
 
 
-class ContentCreate(generics.CreateAPIView):
-    queryset = Content.objects.all()
+class ContentSearchAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        search_query = request.GET.get('seach', '')
+        queryset = Content.objects.filter(name__icontains=search_query)
+        serializer = ContentSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_302_FOUND)
+
+
+class Contentlist(APIView):
     serializer_class = ContentSerializer
     permission_classes = [AllowAny]
 
+    def get(self, request, category):
+        queryset = Content.objects.filter(category_id=category)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ContentCreate(generics.CreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    queryset = Content.objects.all()
+    serializer_class = ContentSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
 
 class ContentDelete(APIView):
-    permission_classes = [IsAdminOrReadOnly]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def delete(self, request, pk):
         try:
@@ -130,9 +148,10 @@ class ContentDelete(APIView):
         
 
 class UserView(APIView):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, format=None):
+    def get(self, request):
         user = request.user
         return Response({
             'username': user.username,
@@ -144,7 +163,6 @@ class UserView(APIView):
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
 
 
 class CommentListAPIView(generics.ListCreateAPIView):
@@ -165,8 +183,9 @@ class CommentDestroyAPIView(DestroyAPIView):
     # lookup_field = 'id'
 
 
-
 class HouseManageCreateAPIView(generics.CreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     queryset = HouseManage.objects.all()
     serializer_class = HouseManageSerializer
     permission_classes = [IsAuthenticated, ]
@@ -178,8 +197,7 @@ class HouseManageListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
 
-
-
-
-
-
+class HouseManageRetrive(generics.RetrieveAPIView):
+    queryset = HouseManage.objects.all()
+    serializer_class = HouseManageSerializer
+    permission_classes = [AllowAny]

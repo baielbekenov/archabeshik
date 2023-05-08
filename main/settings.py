@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-59)7f28w)x+u0$j5yw%2%#_68nt!1m$^!znmpo*byc586vp9#d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.0.105', '192.168.0.111', '192.168.31.218']  # '192.168.4.204'
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.113.218', '192.168.50.137', '192.168.0.105', '192.168.0.111', '192.168.31.218']  # '192.168.4.204'
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'project',
 ]
 
@@ -108,10 +109,10 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated'
+        'rest_framework.permissions.AllowAny'
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',

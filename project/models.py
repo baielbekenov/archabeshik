@@ -1,8 +1,5 @@
-from django.utils import timezone
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 
 
 class User(AbstractUser):
@@ -13,6 +10,7 @@ class User(AbstractUser):
 
 class Category(models.Model):
     name = models.CharField(max_length=80, verbose_name='Название')
+    is_rent = models.BooleanField(blank=True, null=True, default=True)
 
     def __str__(self):
         return self.name
@@ -32,12 +30,15 @@ class Content(models.Model):
 
 class HouseManage(models.Model):
     title = models.CharField(max_length=100)
-    amount_of_rooms = models.IntegerField(verbose_name='Количество комнат')
+    owner = models.CharField(max_length=100, verbose_name='Владелец', blank=True, null=True)
+    amount_of_rooms = models.IntegerField(verbose_name='Количество комнат', blank=True, null=True)
     phone_number = models.IntegerField(verbose_name='Номер телефона')
     category_id = models.ForeignKey(Category, on_delete=models.SET_NULL, verbose_name='Категория', null=True)
+    remont = models.CharField(max_length=50, verbose_name='Ремонт', blank=True, null=True)
+    udobstva = models.CharField(max_length=300, verbose_name='Удобства', blank=True, null=True)
     photos = models.ImageField(verbose_name='Картинки')
     price = models.IntegerField(verbose_name='Цена')
-    description = models.TextField(verbose_name='Описание')
+    description = models.TextField(verbose_name='Описание', blank=True, null=True)
 
     def __str__(self):
         return self.title
