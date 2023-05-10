@@ -1,13 +1,12 @@
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
-from rest_framework.generics import DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from .models import User, Comment
 from rest_framework import generics
 from project.models import Category, Content, HouseManage, User
 from project.serializers import CategorySerializer, ContentSerializer, HouseManageSerializer, UserSerializer, \
     CommentSerializer
-from .pagination import CommentPagination, CategoryPagination, ContentPagination
+from .pagination import CommentPagination, CategoryPagination, ContentPagination, HouseManagePagination
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,29 +19,30 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({'status': 403, 'errors': serializer.errors, 'messge': 'Something went wrong'})
+            return Response({'status': 403, 'errors': serializer.errors, 'message': 'Something went wrong'})
         serializer.save()
 
-        user = User.objects.get(username = serializer.data['username'])
+        user = User.objects.get(username=serializer.data['username'], is_superuser=serializer.data['is_superuser'])
         token_obj, _ = Token.objects.get_or_create(user=user)
 
-        return Response({'status': 200, 'payload': serializer.data, 'token': str(token_obj), 'messge': 'your data is saved'})
+        return Response({'status': 200, 'payload': serializer.data,
+                         'token': str(token_obj), 'is_superuser': user.is_superuser, 'message': 'your data is saved'})
 
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(username=username, password=password)
 
         if user is None:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
         token, created = Token.objects.get_or_create(user=user)
 
-        return Response({'token': token.key}, status=status.HTTP_200_OK)
+        return Response({'token': token.key, 'is_superuser': user.is_superuser},
+                        status=status.HTTP_200_OK)
 
 
 class LogoutAPIView(APIView):
@@ -52,13 +52,6 @@ class LogoutAPIView(APIView):
     def post(self, request):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_200_OK)
-
-
-class CheckAuthAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        return Response({'detail': 'Authenticated.'})
 
 
 class CategoryCreateAPIView(generics.CreateAPIView):
@@ -84,13 +77,11 @@ class ContentDetail(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         comments = Comment.objects.filter(content=instance)
-        comments_serializer = CommentSerializer(comments, many=True)
         return Response({
             'content': serializer.data,
-            # 'comments': comments_serializer.data
         })
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         content = self.get_object()
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
@@ -104,6 +95,25 @@ class ContentList(generics.ListAPIView):
     serializer_class = ContentSerializer
     pagination_class = ContentPagination
     permission_classes = [AllowAny]
+
+    # def get_paginated_response(self, data):
+    #     return Response({
+    #         'count': self.paginator.count,
+    #         'next': self.paginator.get_next_link(),
+    #         'previous': self.paginator.get_previous_link(),
+    #         'results': data
+    #     })
+    #
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
 
 class ContentSearchAPIView(APIView):
@@ -119,32 +129,61 @@ class ContentSearchAPIView(APIView):
 class Contentlist(APIView):
     serializer_class = ContentSerializer
     permission_classes = [AllowAny]
+    pagination_class = ContentPagination
 
     def get(self, request, category):
         queryset = Content.objects.filter(category_id=category)
-        serializer = self.serializer_class(queryset, many=True)
+        serializer = self.serializer_class(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.image.url
+        return request.build_absolute_uri(image_url)
 
-class ContentCreate(generics.CreateAPIView):
+
+class ContentCreate(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
-    queryset = Content.objects.all()
-    serializer_class = ContentSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        serializer = ContentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ContentDelete(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def delete(self, request, pk):
+    def delete(self, pk):
         try:
             obj = Content.objects.get(pk=pk)
         except Content.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ContentPatchView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            obj = Content.objects.get(pk=pk)
+        except Content.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ContentSerializer(obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
 class UserView(APIView):
@@ -176,28 +215,43 @@ class CommentListAPIView(generics.ListCreateAPIView):
         return Comment.objects.filter(content_id=content_id)
 
 
-class CommentDestroyAPIView(DestroyAPIView):
-    # queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
-    # lookup_field = 'id'
-
-
-class HouseManageCreateAPIView(generics.CreateAPIView):
+class HouseManageCreateAPIView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        serializer = HouseManageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HouseManageListAPIView(APIView):
     queryset = HouseManage.objects.all()
     serializer_class = HouseManageSerializer
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [AllowAny]
+    pagination_class = HouseManagePagination
 
 
-class HouseManageListAPIView(generics.ListAPIView):
+class HouseManageRetrive(APIView):
     queryset = HouseManage.objects.all()
     serializer_class = HouseManageSerializer
     permission_classes = [AllowAny]
 
 
-class HouseManageRetrive(generics.RetrieveAPIView):
-    queryset = HouseManage.objects.all()
-    serializer_class = HouseManageSerializer
-    permission_classes = [AllowAny]
+class HouseManagePatch(APIView):
+
+    def patch(self, request, pk):
+        try:
+            queryset = HouseManage.objects.get(pk=pk)
+        except HouseManage.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = HouseManageSerializer(queryset, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
