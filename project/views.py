@@ -96,24 +96,24 @@ class ContentList(generics.ListAPIView):
     pagination_class = ContentPagination
     permission_classes = [AllowAny]
 
-    # def get_paginated_response(self, data):
-    #     return Response({
-    #         'count': self.paginator.count,
-    #         'next': self.paginator.get_next_link(),
-    #         'previous': self.paginator.get_previous_link(),
-    #         'results': data
-    #     })
-    #
-    # def list(self, request, *args, **kwargs):
-    #     queryset = self.filter_queryset(self.get_queryset())
-    #
-    #     page = self.paginate_queryset(queryset)
-    #     if page is not None:
-    #         serializer = self.get_serializer(page, many=True)
-    #         return self.get_paginated_response(serializer.data)
-    #
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        search_query = self.request.query_params.get('search', None)
+
+        if search_query:
+            queryset = queryset.filter(title__icontains=search_query)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        search_query = request.query_params.get('search', None)
+        if search_query:
+            response.data['search_query'] = search_query
+
+        return response
 
 
 class ContentSearchAPIView(APIView):
@@ -142,17 +142,21 @@ class Contentlist(APIView):
         return request.build_absolute_uri(image_url)
 
 
-class ContentCreate(APIView):
+class ContentCreate(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated, IsAdminUser]
+    queryset = Content.objects.all()
+    serializer_class = ContentSerializer
 
-    def post(self, request):
-        serializer = ContentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # def post(self, request):
+    #     serializer = ContentSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     else:
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ContentDelete(APIView):
@@ -216,8 +220,8 @@ class CommentListAPIView(generics.ListCreateAPIView):
 
 
 class HouseManageCreateAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    # authentication_classes = [TokenAuthentication]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = HouseManageSerializer(data=request.data)
@@ -228,17 +232,35 @@ class HouseManageCreateAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class HouseManageListAPIView(APIView):
+class HouseManageListAPIView(generics.ListAPIView):
     queryset = HouseManage.objects.all()
     serializer_class = HouseManageSerializer
     permission_classes = [AllowAny]
     pagination_class = HouseManagePagination
 
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.image.url
+        return request.build_absolute_uri(image_url)
 
-class HouseManageRetrive(APIView):
+
+class HouseManageRetrive(generics.RetrieveAPIView):
     queryset = HouseManage.objects.all()
     serializer_class = HouseManageSerializer
     permission_classes = [AllowAny]
+
+    # def get(self, request, *args, **kwargs):
+    #     instance = self.get_object()
+    #     serializer = self.get_serializer(instance)
+    #     comments = Comment.objects.filter(content=instance)
+    #     return Response({
+    #         'content': serializer.data,
+    #     })
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.image.url
+        return request.build_absolute_uri(image_url)
 
 
 class HouseManagePatch(APIView):

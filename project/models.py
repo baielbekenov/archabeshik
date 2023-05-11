@@ -43,6 +43,14 @@ class HouseManage(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        ordering = ['-id']
+
+
+class HouseManageImages(models.Model):
+    house = models.ForeignKey(HouseManage, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='images', default="", null=True, blank=True)
+
 
 class Comment(models.Model):
     content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='comments')

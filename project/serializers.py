@@ -1,5 +1,6 @@
+from django.contrib.auth import get_user
 from rest_framework import serializers
-from project.models import User, Category, Content, HouseManage, Comment
+from project.models import User, Category, Content, HouseManage, Comment, HouseManageImages
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,12 +34,31 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_rent']
 
 
+class HouseManageImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HouseManageImages
+        fields = ['id', 'house', 'image']
+
+
 class HouseManageSerializer(serializers.ModelSerializer):
+    images = HouseManageImageSerializer(many=True, read_only=True)
+    uploaded_images = serializers.ListField(
+        child=serializers.ImageField(max_length=1000000, allow_empty_file=False, use_url=False),
+        write_only=True
+    )
+
     class Meta:
         model = HouseManage
         fields = ['id', 'title', 'owner',  'amount_of_rooms',
                   'phone_number', 'category_id', 'remont', 'photos',
-                  'udobstva', 'price', 'description']
+                  'udobstva', 'price', 'description', 'images', 'uploaded_images']
+
+    def create(self, validated_data):
+        uploaded_images = validated_data.pop('uploaded_images')
+        house = HouseManage.objects.create(**validated_data)
+        for image in uploaded_images:
+            new_house_image = HouseManageImages.objects.create(house=house, image=image)
+        return house
 
 
 class CommentSerializer(serializers.ModelSerializer):
