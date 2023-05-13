@@ -104,17 +104,17 @@ WSGI_APPLICATION = 'main.wsgi.application'
 #     }
 # }
 
-host = os.environ.get('HOST', 'localhost')
-port = os.environ.get('PORT', '5432')
-database_name = os.environ.get('DATABASE_NAME', 'my_database')
+# host = os.environ.get('HOST', 'localhost')
+# port = os.environ.get('PORT', '5432')
+# database_name = os.environ.get('DATABASE_NAME', 'my_database')
 
 # Используем их для настройки базы данных
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': host,
-        'PORT': port,
-        'NAME': database_name,
+        'HOST': 'localhost',
+        'PORT': 5432,
+        'NAME': 'mydatabase',
         'USER': 'myuser',
         'PASSWORD': 'mypassword',
     }
