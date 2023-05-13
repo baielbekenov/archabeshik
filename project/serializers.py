@@ -12,6 +12,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_superuser']
 
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError('This username already exists', code='409')
+        return value
+
     def create(self, validated_data):
         first_name = validated_data.pop('first_name')
         last_name = validated_data.pop('last_name')

@@ -25,6 +25,9 @@ class RegistrationAPIView(APIView):
         user = User.objects.get(username=serializer.data['username'], is_superuser=serializer.data['is_superuser'])
         token_obj, _ = Token.objects.get_or_create(user=user)
 
+        if User.objects.get(username=serializer.data['username']):
+            return Response({'error': 'This user is already exist!'}, status=409)
+
         return Response({'status': 200, 'payload': serializer.data,
                          'token': str(token_obj), 'is_superuser': user.is_superuser, 'message': 'your data is saved'})
 
