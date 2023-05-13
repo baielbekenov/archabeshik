@@ -111,12 +111,12 @@ WSGI_APPLICATION = 'main.wsgi.application'
 # Используем их для настройки базы данных
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': 'localhost',
-        'PORT': 5432,
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'baielbekenov.mysql.pythonanywhere-services.com',
+        'PORT': 3306,
         'NAME': 'mydatabase',
-        'USER': 'myuser',
-        'PASSWORD': 'mypassword',
+        'USER': 'baielbekenov',
+        'PASSWORD': 'baieladmin',
     }
 }
 
