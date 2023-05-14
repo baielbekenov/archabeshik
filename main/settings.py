@@ -97,28 +97,28 @@ WSGI_APPLICATION = 'main.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # host = os.environ.get('HOST', 'localhost')
 # port = os.environ.get('PORT', '5432')
 # database_name = os.environ.get('DATABASE_NAME', 'my_database')
 
 # Используем их для настройки базы данных
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': 'baielbekenov.mysql.pythonanywhere-services.com',
-        'PORT': 3306,
-        'NAME': '$mydatabase',
-        'USER': 'baielbekenov',
-        'PASSWORD': 'baieladmin',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'HOST': 'baielbekenov.mysql.pythonanywhere-services.com',
+#         'PORT': 3306,
+#         'NAME': '$mydatabase',
+#         'USER': 'baielbekenov',
+#         'PASSWORD': 'baieladmin',
+#     }
+# }
 
 
 REST_FRAMEWORK = {
