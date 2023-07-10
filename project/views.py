@@ -1,16 +1,38 @@
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from .models import User, Comment
+
+from .filters import SearchFilterSet
+from .models import User, Comment, Report, Question, Advertisement, History
 from rest_framework import generics
 from project.models import Category, Content, HouseManage, User
 from project.serializers import CategorySerializer, ContentSerializer, HouseManageSerializer, UserSerializer, \
-    CommentSerializer
-from .pagination import CommentPagination, CategoryPagination, ContentPagination, HouseManagePagination
+    CommentSerializer, ReportSerializer, QuestionSerializer, AdvertisementSerializer, HistorySerializer
+from .pagination import CommentPagination, CategoryPagination, ContentPagination, HouseManagePagination, \
+    ReportPagination, QuestionPagination, AdvertisementPagination, HistoryPagination
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
+
+
+# class RegistrationAPIView(APIView):
+#     permission_classes = [AllowAny]
+#
+#     def post(self, request):
+#         serializer = UserSerializer(data=request.data)
+#         if not serializer.is_valid():
+#             return Response({'status': 403, 'errors': serializer.errors, 'message': 'Something went wrong'})
+#         serializer.save()
+#
+#         user = User.objects.get(username=serializer.data['username'], is_superuser=serializer.data['is_superuser'])
+#         token_obj, _ = Token.objects.get_or_create(user=user)
+#
+#         if User.objects.get(username=serializer.data['username']):
+#             return Response({'error': 'This user is already exist!'}, status=409)
+#
+#         return Response({'status': 200, 'payload': serializer.data,
+#                          'token': str(token_obj), 'is_superuser': user.is_superuser, 'message': 'your data is saved'})
 
 
 class RegistrationAPIView(APIView):
@@ -19,17 +41,27 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({'status': 403, 'errors': serializer.errors, 'message': 'Something went wrong'})
-        serializer.save()
+            return Response({
+                'status': 403,
+                'errors': serializer.errors,
+                'message': 'Something went wrong'
+            })
 
-        user = User.objects.get(username=serializer.data['username'], is_superuser=serializer.data['is_superuser'])
+        if User.objects.filter(username=serializer.validated_data['username']).exists():
+            return Response({
+                'error': 'This user already exists!'
+            }, status=409)
+
+        user = serializer.save()
         token_obj, _ = Token.objects.get_or_create(user=user)
 
-        if User.objects.get(username=serializer.data['username']):
-            return Response({'error': 'This user is already exist!'}, status=409)
-
-        return Response({'status': 200, 'payload': serializer.data,
-                         'token': str(token_obj), 'is_superuser': user.is_superuser, 'message': 'your data is saved'})
+        return Response({
+            'status': 200,
+            'payload': serializer.data,
+            'token': str(token_obj),
+            'is_superuser': user.is_superuser,
+            'message': 'Your data is saved'
+        })
 
 
 class LoginAPIView(APIView):
@@ -162,6 +194,12 @@ class ContentCreate(generics.CreateAPIView):
     #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class SearchContentAPIView(generics.ListAPIView):
+    queryset = Content.objects.all()
+    serializer_class = ContentSerializer
+    filterset_class = SearchFilterSet
+
+
 class ContentDelete(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -220,6 +258,16 @@ class CommentListAPIView(generics.ListCreateAPIView):
     def get_queryset(self):
         content_id = self.kwargs['content_id']
         return Comment.objects.filter(content_id=content_id)
+
+    def post(self, request, *args, **kwargs):
+        content_id = self.kwargs['content_id']
+        # Получите данные для комментария из запроса
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            # Сохраните комментарий с указанным content_id
+            serializer.save(content_id=content_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class HouseManageCreateAPIView(APIView):
@@ -280,3 +328,36 @@ class HouseManagePatch(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReportAPIView(generics.ListCreateAPIView):
+    queryset = Report.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = [AllowAny]
+    pagination_class = ReportPagination
+
+
+class QuestionAPIView(generics.ListCreateAPIView):
+    queryset = Question.objects.all()
+    serializer_class = QuestionSerializer
+    permission_classes = [AllowAny]
+    pagination_class = QuestionPagination
+
+
+class AdvertisementListAPIView(generics.ListAPIView):
+    queryset = Advertisement.objects.all()
+    serializer_class = AdvertisementSerializer
+    permission_classes = [AllowAny]
+    pagination_class = AdvertisementPagination
+
+
+class HistoryListAPIView(generics.ListAPIView):
+    queryset = History.objects.all()
+    serializer_class = HistorySerializer
+    permission_classes = [AllowAny]
+    pagination_class = HistoryPagination
+
+
+
+
+

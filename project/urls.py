@@ -11,6 +11,7 @@ urlpatterns = [
     path('category_list/', views.CategoryListAPIView.as_view()),
     path('content_detail/<int:pk>/', views.ContentDetail.as_view()),
     path('content_list/', views.ContentList.as_view()),
+    path('search_content/?title=search_query', views.SearchContentAPIView.as_view()),
     path('content_list/<int:category>/', views.Contentlist.as_view()),
     path('content_create/', views.ContentCreate.as_view()),
     path('content_delete/<int:pk>/', views.ContentDelete.as_view()),
@@ -18,10 +19,15 @@ urlpatterns = [
     path('content_search/', views.ContentSearchAPIView.as_view()),
     path('users/', views.UserView.as_view(), name='user-list'),
     path('users/<int:pk>/', views.UserDetail.as_view(), name='user-detail'),
-    path('comment_list/', views.CommentListAPIView.as_view()),
+    path('comment_list/<int:content_id>/', views.CommentListAPIView.as_view()),
     path('housemanage_create/', views.HouseManageCreateAPIView.as_view()),
     path('content_list/housemanage/', views.HouseManageListAPIView.as_view()),
     path('housemanage_list/<int:pk>/', views.HouseManageRetrive.as_view()),
+
+    path('report_list/', views.ReportAPIView.as_view()),
+    path('question_list/', views.QuestionAPIView.as_view()),
+    path('advert_list/', views.AdvertisementListAPIView.as_view()),
+    path('history_list/', views.HistoryListAPIView.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

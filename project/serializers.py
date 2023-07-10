@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user
 from rest_framework import serializers
-from project.models import User, Category, Content, HouseManage, Comment, HouseManageImages
+from project.models import User, Category, Content, HouseManage, Comment, HouseManageImages, Report, Question, \
+    Advertisement, History
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -95,3 +96,29 @@ class ContentSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.image.url)
         else:
             return ''
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = '__all__'
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = '__all__'
+
+
+class AdvertisementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Advertisement
+        fields = '__all__'
+
+
+class HistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = History
+        fields = '__all__'
+
+

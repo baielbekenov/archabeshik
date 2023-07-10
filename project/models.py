@@ -66,3 +66,40 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Report(models.Model):
+    name = models.CharField(max_length=150, verbose_name='Имя')
+    phone_number = models.CharField(max_length=10, verbose_name='Номер телефона', blank=True, null=True)
+    text = models.TextField(verbose_name='Текст')
+
+    def __str__(self):
+        return self.name
+
+
+class Question(models.Model):
+    name = models.CharField(max_length=150, verbose_name='Имя')
+    phone_number = models.CharField(max_length=10, verbose_name='Номер телефона', blank=True, null=True)
+    text = models.TextField(verbose_name='Текст')
+
+    def __str__(self):
+        return self.name
+
+
+class Advertisement(models.Model):
+    image = models.ImageField(verbose_name='Изображения')
+    title = models.CharField(max_length=250, verbose_name='Название рекламы', blank=True, null=True)
+    phone_number = models.CharField(max_length=10, verbose_name='Номер телефона', blank=True, null=True)
+    link = models.URLField(max_length=200, verbose_name='Ссылка')
+
+    def __str__(self):
+        return self.title
+
+
+class History(models.Model):
+    title = models.CharField(max_length=150, verbose_name='Название истории')
+    image = models.ImageField(upload_to='images/history', verbose_name='Изображения', blank=True, null=True)
+    text = models.TextField()
+
+    def __str__(self):
+        return self.title
