@@ -43,7 +43,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class HouseImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseImage
-        fields = ('id', 'image',)
+        fields = ('image',)
 
 
 class HouseManageSerializer(serializers.ModelSerializer):
@@ -72,7 +72,7 @@ class CommentSerializer(serializers.ModelSerializer):
 class ContentImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContentImage
-        fields = ('id', 'image',)
+        fields = ('image',)
 
 
 class ContentSerializer(serializers.ModelSerializer):
