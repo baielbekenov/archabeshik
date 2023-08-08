@@ -23,7 +23,7 @@ class CategoryPagination(PageNumberPagination):
 
 
 class ContentPagination(PageNumberPagination):
-    page_size = 5
+    page_size = 12
     page_query_param = 'page_size'
 
     def get_paginated_response(self, data):

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user
 from rest_framework import serializers
-from project.models import User, Category, Content, HouseManage, Comment, HouseManageImages, Report, Question, \
-    Advertisement, History
+from project.models import User, Category, Content, HouseManage, Comment, Report, Question, \
+    Advertisement, History, HouseImage, ContentImage
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -40,31 +40,18 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_rent']
 
 
-class HouseManageImageSerializer(serializers.ModelSerializer):
+class HouseImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = HouseManageImages
-        fields = ['id', 'house', 'image']
+        model = HouseImage
+        fields = ('id', 'image',)
 
 
 class HouseManageSerializer(serializers.ModelSerializer):
-    images = HouseManageImageSerializer(many=True, read_only=True)
-    uploaded_images = serializers.ListField(
-        child=serializers.ImageField(max_length=1000000, allow_empty_file=False, use_url=False),
-        write_only=True
-    )
+    photos = HouseImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = HouseManage
-        fields = ['id', 'title', 'owner',  'amount_of_rooms',
-                  'phone_number', 'category_id', 'remont', 'photos',
-                  'udobstva', 'price', 'description', 'images', 'uploaded_images']
-
-    def create(self, validated_data):
-        uploaded_images = validated_data.pop('uploaded_images')
-        house = HouseManage.objects.create(**validated_data)
-        for image in uploaded_images:
-            new_house_image = HouseManageImages.objects.create(house=house, image=image)
-        return house
+        fields = '__all__'
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -82,13 +69,20 @@ class CommentSerializer(serializers.ModelSerializer):
     #     return super().create(validated_data)
 
 
+class ContentImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentImage
+        fields = ('id', 'image',)
+
+
 class ContentSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
+    photos = ContentImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Content
         fields = ['id', 'title', 'category_id', 'image', 'data_added', 'owner',
-                  'content', 'comments']
+                  'content', 'comments', 'photos']
 
     def get_image_url(self, obj):
         request = self.context.get('request')

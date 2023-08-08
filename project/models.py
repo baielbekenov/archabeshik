@@ -28,6 +28,11 @@ class Content(models.Model):
         return self.title
 
 
+class ContentImage(models.Model):
+    content = models.ForeignKey('Content', on_delete=models.CASCADE, related_name='photos')
+    image = models.ImageField(upload_to='content_photos/')
+
+
 class HouseManage(models.Model):
     title = models.CharField(max_length=100)
     owner = models.CharField(max_length=100, verbose_name='Владелец', blank=True, null=True)
@@ -36,7 +41,7 @@ class HouseManage(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.SET_NULL, verbose_name='Категория', null=True)
     remont = models.CharField(max_length=50, verbose_name='Ремонт', blank=True, null=True)
     udobstva = models.CharField(max_length=300, verbose_name='Удобства', blank=True, null=True)
-    photos = models.ImageField(verbose_name='Картинки')
+    photoss = models.ImageField(verbose_name='Картинки')
     price = models.IntegerField(verbose_name='Цена')
     description = models.TextField(verbose_name='Описание', blank=True, null=True)
 
@@ -47,9 +52,9 @@ class HouseManage(models.Model):
         ordering = ['-id']
 
 
-class HouseManageImages(models.Model):
-    house = models.ForeignKey(HouseManage, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='images', default="", null=True, blank=True)
+class HouseImage(models.Model):
+    house = models.ForeignKey('HouseManage', on_delete=models.CASCADE, related_name='photos')
+    image = models.ImageField(upload_to='houses/')
 
 
 class Comment(models.Model):
@@ -87,8 +92,9 @@ class Question(models.Model):
 
 
 class Advertisement(models.Model):
-    image = models.ImageField(verbose_name='Изображения')
+    image = models.ImageField(verbose_name='Изображения', blank=True, null=True)
     title = models.CharField(max_length=250, verbose_name='Название рекламы', blank=True, null=True)
+    text = models.CharField(max_length=500, verbose_name='Текст')
     phone_number = models.CharField(max_length=10, verbose_name='Номер телефона', blank=True, null=True)
     link = models.URLField(max_length=200, verbose_name='Ссылка')
 

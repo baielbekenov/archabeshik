@@ -16,25 +16,6 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 
 
-# class RegistrationAPIView(APIView):
-#     permission_classes = [AllowAny]
-#
-#     def post(self, request):
-#         serializer = UserSerializer(data=request.data)
-#         if not serializer.is_valid():
-#             return Response({'status': 403, 'errors': serializer.errors, 'message': 'Something went wrong'})
-#         serializer.save()
-#
-#         user = User.objects.get(username=serializer.data['username'], is_superuser=serializer.data['is_superuser'])
-#         token_obj, _ = Token.objects.get_or_create(user=user)
-#
-#         if User.objects.get(username=serializer.data['username']):
-#             return Response({'error': 'This user is already exist!'}, status=409)
-#
-#         return Response({'status': 200, 'payload': serializer.data,
-#                          'token': str(token_obj), 'is_superuser': user.is_superuser, 'message': 'your data is saved'})
-
-
 class RegistrationAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -155,21 +136,23 @@ class ContentSearchAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        search_query = request.GET.get('seach', '')
-        queryset = Content.objects.filter(name__icontains=search_query)
+        queryset = Content.objects.all()
         serializer = ContentSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_302_FOUND)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class Contentlist(APIView):
     serializer_class = ContentSerializer
     permission_classes = [AllowAny]
-    pagination_class = ContentPagination
 
     def get(self, request, category):
         queryset = Content.objects.filter(category_id=category)
-        serializer = self.serializer_class(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+        paginator = ContentPagination()
+        paginator.page_size = 10
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.serializer_class(paginated_queryset, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
 
     def get_image(self, obj):
         request = self.context.get('request')
@@ -192,12 +175,6 @@ class ContentCreate(generics.CreateAPIView):
     #         return Response(serializer.data, status=status.HTTP_201_CREATED)
     #     else:
     #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class SearchContentAPIView(generics.ListAPIView):
-    queryset = Content.objects.all()
-    serializer_class = ContentSerializer
-    filterset_class = SearchFilterSet
 
 
 class ContentDelete(APIView):
@@ -344,11 +321,22 @@ class QuestionAPIView(generics.ListCreateAPIView):
     pagination_class = QuestionPagination
 
 
+class AdvertisementCreateAPIView(APIView):
+    def post(self, request):
+        serializer = AdvertisementSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 class AdvertisementListAPIView(generics.ListAPIView):
     queryset = Advertisement.objects.all()
     serializer_class = AdvertisementSerializer
     permission_classes = [AllowAny]
-    pagination_class = AdvertisementPagination
+
 
 
 class HistoryListAPIView(generics.ListAPIView):
